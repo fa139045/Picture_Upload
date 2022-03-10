@@ -8,7 +8,7 @@ import cv2
 from datetime import datetime as dt
 
 
-UPLOAD_FOLDER = './stastic/uploads/'
+UPLOAD_FOLDER = 'static/uploads/'
 # アップロード先のディレクトリ
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
@@ -35,25 +35,42 @@ def index():
 
 
 @app.route('/upload_file', methods=['GET', 'POST'])
-def changename_and_gray():
-    img_dir = "./static/uploads/"
+def upload_file():
     if request.method == 'POST':
-        #### POSTにより受け取った画像を読み込む
-        stream = request.files['file'].stream
-        img_array = np.asarray(bytearray(stream.read()), dtype=np.uint8)
-
-        # 画像データ用配列にデータがあれば
-        if len(img_array) != 0:
-            img = cv2.imdecode(img_array, 1)
-            #白黒変換
-            gray = rgb_to_gray(img)
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
             #### 現在時刻を名前として「uploads/」に保存する
             dt_now = dt.now().strftime("%Y%m%d%H%M%S%f")
-            img_name = "gray" + dt_now + ".jpg"
-            img_path = img_dir + img_name
-            cv2.imwrite(os.path.join(img_dir+ img_name), gray)
-    #### 保存した画像ファイルのpathをHTMLに渡す
-    return render_template('pred.html', img_path=img_path)
+            filename = dt_now + ".jpg"
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+            # 静的ファイルのパス
+            img_dir = "./static/uploads/"
+            path = img_dir + filename
+            #画像の読み込み
+            img = cv2.imread(path)
+            # 画像データ用配列にデータがあれば
+            if len(img) != 0:
+                #読み込んだ画像を白黒変換
+                gray = rgb_to_gray(img)
+                #### 現在時刻を名前として「uploads/」に保存する
+                dt_now = dt.now().strftime("%Y%m%d%H%M%S%f")
+                img_name = "gray" + dt_now + ".jpg"
+                #画像の保存先のパスの指定
+                img_path = img_dir + img_name
+                cv2.imwrite(os.path.join(img_dir + img_name), gray)
+            #### 保存した画像ファイルのpathをHTMLに渡す
+        return render_template('pred.html', img_path=img_path)
 
 
 if __name__ == '__main__':
