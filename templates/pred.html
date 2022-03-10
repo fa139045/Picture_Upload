@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 
 <html>
-<body>
-<h1>{{ ss }}</h1>
-<p>area</p>
-</body>
+  <body>
+    <p>1</p>
+    {% if img_path %}
+      <div>
+         <img src="{{ img_path }}" style="margin-top: 10px; vertical-align: bottom; width: 400px;">
+      </div>
+    {% endif %}
+  </body>
 </html>
